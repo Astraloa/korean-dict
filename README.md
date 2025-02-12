@@ -29,7 +29,7 @@
 >
 > # Required node packages
 > 1. `node:fs` (default)
-> 2. `better-sqlite3@lastest` (npm)
+> 2. `better-sqlite3` (npm)
   ```bash
-npm i better-sqlite3@lastest
+npm i better-sqlite3 --force
   ```

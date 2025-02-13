@@ -142,7 +142,7 @@ let file_list = [];
                 data: {
                     word: W.word,
                     mean: W.mean.length == 1 ? W.mean[0] : W.mean.map((s, i) => (i + 1) + '. ' + s).join('\n'),
-                    type: W.type,
+                    type: W.type || '없음',
                     prefix: W.prefix,
                     suffix: W.suffix
                 }

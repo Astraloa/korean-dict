@@ -68,6 +68,7 @@ let file_list = [];
     datas.forEach(x => {
         let Xword = (x.wordinfo || x.word_info).word.replace(/[^가-힣ㄱ-ㅎ0-9]/g, '');
         let Xmean = (x.senseinfo || x.word_info.pos_info[0].comm_pattern_info[0].sense_info.at(-1)).definition;
+        let Xtype = (x.senseinfo || x.word_info.pos_info[0]).pos;
         let match = /\d$/.test(Xword);
         let num;
         if (match) {
@@ -95,6 +96,7 @@ let file_list = [];
         word[prefix].push({
             word: Xword,
             mean: [Xmean],
+            type: Xtype,
             prefix: prefix,
             suffix: suffix
         });
@@ -107,6 +109,7 @@ let file_list = [];
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 word TEXT NOT NULL,
                 mean TEXT NOT NULL,
+                type TEXT NOT NULL,
                 prefix TEXT,
                 suffix TEXT
             );
@@ -139,6 +142,7 @@ let file_list = [];
                 data: {
                     word: W.word,
                     mean: W.mean.length == 1 ? W.mean[0] : W.mean.map((s, i) => (i + 1) + '. ' + s).join('\n'),
+                    type: W.type,
                     prefix: W.prefix,
                     suffix: W.suffix
                 }

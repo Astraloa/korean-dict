@@ -1,3 +1,4 @@
+// refactored - v1.1
 console.clear();
 
 console.log(`
@@ -13,7 +14,7 @@ console.log(`
                                                                       Y8b d88P 
                                                                        "Y88P"  `);
 console.log('\n  - by Astraloa  [Utils]\n');
-process.title = 'ready to services';
+process.title = 'Astraloa util services #1';
 
 const Database = require('better-sqlite3');
 const fs = require('fs');
@@ -65,7 +66,7 @@ let file_list = [];
     })
     console.log('[ ! ] 사전 데이터 | ' + total + '개\n');
     datas.forEach(x => {
-        let Xword = (x.wordinfo || x.word_info).word.replace(/[^가-힣0-9]/g, '');
+        let Xword = (x.wordinfo || x.word_info).word.replace(/[^가-힣ㄱ-ㅎ0-9]/g, '');
         let Xmean = (x.senseinfo || x.word_info.pos_info[0].comm_pattern_info[0].sense_info.at(-1)).definition;
         let match = /\d$/.test(Xword);
         let num;
@@ -78,6 +79,7 @@ let file_list = [];
         if (1 < Number(num) && num) {
             Index = word[prefix].findIndex(V => Xword.startsWith(V.word));
             if (Index == -1) return;
+            if (word[prefix][Index].mean.includes(Xmean)) return;
             word[prefix][Index].mean.push(Xmean);
             return;
         } else if (1 == Number(num)) {
@@ -85,6 +87,7 @@ let file_list = [];
         }
         Index = word[prefix].findIndex(V => V.word == Xword);
         if (Index != -1) {
+            if (word[prefix][Index].mean.includes(Xmean)) return;
             word[prefix][Index].mean.push(Xmean);
             return;
         }
@@ -116,9 +119,20 @@ let file_list = [];
                 creator TEXT NOT NULL
             );
         `);
-    Object.keys(word).forEach(prefix => {
+    console.log(`DB 구축 완료!\n\n`);
+    let keys = Object.keys(word)
+        .sort((a, b) => a.localeCompare(b))
+        .map(prefix => {
+            word[prefix] = mergeSort(word[prefix]);
+            return prefix
+        });
+    console.log(`데이터 정렬 완료!\n\n`);
+    let startTime = Date.now();
+    keys.forEach(prefix => {
         word[prefix].forEach(W => {
             thread++;
+            write(`assets | ${thread.toLocaleString()}/${total.toLocaleString()}\r`);
+            process.title = `[${Math.floor(thread / total * 10000) / 100}%] assets loading..`;
             input({
                 db: db,
                 table: 'dicts',
@@ -131,6 +145,7 @@ let file_list = [];
             });
         })
     });
+    write(`assets loaded!${'\u200b'.repeat(35)}`);
     input({
         db: db,
         table: 'info',
@@ -140,8 +155,7 @@ let file_list = [];
             creator: 'Astraloa'
         }
     });
-    process.stdout.write('assets loaded!');
-    console.log('\n\n사전이 완성되었습니다!');
+    console.log('\n\n사전이 완성되었습니다!\n소요 시간|' + formatDuration(startTime));
     process.exit(1);
 })();
 
@@ -160,6 +174,53 @@ function input({ db, table, data }) {
     const info = stmt.run(...values);
 
     return info.lastInsertRowid;
+}
+
+function formatDuration(past) {
+    const diff = Date.now() - past;
+    
+    const ms = diff % 1000;
+    const totalSeconds = Math.floor(diff / 1000);
+    const seconds = totalSeconds % 60;
+    const totalMinutes = Math.floor(totalSeconds / 60);
+    const minutes = totalMinutes % 60;
+    const totalHours = Math.floor(totalMinutes / 60);
+    const hours = totalHours % 24;
+
+    return `${hours}시간 ${minutes}분 ${seconds}초 ${ms}ms`;
+}
+
+function write(text) {
+    process.stdout.write(String(text));
+}
+
+function mergeSort(arr) {
+    if (arr.length <= 1) {
+        return arr;
+    }
+    const mid = Math.floor(arr.length / 2);
+    const left = arr.slice(0, mid);
+    const right = arr.slice(mid);
+
+    return merge(mergeSort(left), mergeSort(right));
+}
+
+function merge(left, right) {
+    let result = [];
+    let leftIndex = 0;
+    let rightIndex = 0;
+
+    while (leftIndex < left.length && rightIndex < right.length) {
+        if (left[leftIndex] < right[rightIndex]) {
+            result.push(left[leftIndex]);
+            leftIndex++;
+        } else {
+            result.push(right[rightIndex]);
+            rightIndex++;
+        }
+    }
+
+    return result.concat(left.slice(leftIndex)).concat(right.slice(rightIndex));
 }
 
 async function delay(ms) {

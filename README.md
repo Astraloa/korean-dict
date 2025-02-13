@@ -26,7 +26,7 @@
 > 5. 그 다음 `국립국어원.zip` 을 내려받은 후에 압축을 해제합니다.
 > 6. 국립국어원 폴더 내의 `index.js` 파일이 있는 위치에 해당 사전 데이터의 폴더들을 옮깁니다.
 > 7. `node 국립국어원` 혹은 `node 국립국어원/index.js` 로 파일을 실행합니다.
-> 8. 실행이 끝난 후 `index.js` 파일의 위치에 `dicts_${Date.now}.db` 가 있으면 성공입니다.
+> 8. 실행이 끝난 후 `index.js` 파일의 위치에 `dicts_${Date.now()}.db` 가 있으면 성공입니다.
 >
 > # Required node packages
 > 1. `node:fs` (default)

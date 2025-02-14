@@ -1,4 +1,4 @@
-// refactored - v1.1
+// refactored - v1.2
 console.clear();
 
 console.log(`

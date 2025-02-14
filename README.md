@@ -7,16 +7,21 @@
 > [우리말샘](https://opendict.korean.go.kr/)
 >
 > # preview
-> 총 소요 시간 | `0시간 59분 18초 111ms`
+> 총 소요 시간 | `0시간 58분 30초 511ms`
 >
+> `DB 파일 속성`
+> 
+> |dicts|info|
+> |:-:|:-:|
+> |word, mean, type, prefix, suffix|build_time, data, creator|
+> 
 > |사전들 기존 용량|디비 용량|
 > |:-:|:-:|
-> |`2.43GB` (`2,615,860,503 bytes`)|`180MB` (`189,046,784 bytes`)|
+> |`2.43GB` (`2,615,860,503 bytes`)|`187MB` (`196,362,240 bytes`)|
 >
-> __약 13.837배 감소__
+> __약 13.32배 감소__
 > 
-> ![assets](./assets.png)
-> ![runtime](./runtime.png)
+> ![preview](./full_preview.png)
 > 
 > # How to use?
 > 1. 사용할 사전들을 `전체 내려받기 > json 으로 내려받기` 로 내려받습니다.

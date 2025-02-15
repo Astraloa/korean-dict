@@ -81,7 +81,7 @@ let file_list = [];
         if (1 < Number(num) && num) {
             Index = word[prefix].findIndex(V => Xword.startsWith(V.word));
             if (Index == -1) return;
-            if (word[prefix][Index].mean.includes(Xmean)) return;
+            if (word[prefix][Index].mean.findIndex(mean => mean == Xmean) != -1) return;
             word[prefix][Index].mean.push(Xmean);
             return;
         } else if (1 == Number(num)) {

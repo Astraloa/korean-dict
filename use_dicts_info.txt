@@ -1,0 +1,26 @@
+해당 데이터들은 20250203 일시에 전체 내려받기 후 저장한 정보로 최신 정보가 아닐 수 있음을 알립니다.
+
+형식 - 사전 | 단어 위치 / 뜻 위치 / 품사 위치 / 종류 위치
+
+우리말샘 | wordinfo.word / senseinfo.definition / senseinfo.pos / wordinfo.word_type
+표준국어대사전 | word_info.word / word_info.pos_info[0].comm_pattern_info[0].sense_info.at(-1).definition / word_info.pos_info[0].pos / word_info.pos_info[0].comm_pattern_info[0].sense_info.at(-1).type
+
+
+Found Folders: 2
+
+[ ! ] 사전 발견 | 우리말샘
+[ ! ] 사전 발견 | 표준국어대사전
+
+[ ! ] 사전 데이터 파일: 112개
+[ ! ] 사전 데이터 | 1622897개
+
+DB 구축 완료!
+
+
+데이터 정렬 완료!
+
+
+assets loaded!​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​
+
+사전이 완성되었습니다!
+소요 시간|0시간 58분 30초 511ms

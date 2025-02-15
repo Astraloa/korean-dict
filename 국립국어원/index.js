@@ -1,4 +1,4 @@
-// refactored - v1.2
+// refactored - v1.3
 console.clear();
 
 console.log(`
@@ -68,7 +68,8 @@ let file_list = [];
     datas.forEach(x => {
         let Xword = (x.wordinfo || x.word_info).word.replace(/[^가-힣ㄱ-ㅎ0-9]/g, '');
         let Xmean = (x.senseinfo || x.word_info.pos_info[0].comm_pattern_info[0].sense_info.at(-1)).definition;
-        let Xtype = (x.senseinfo || x.word_info.pos_info[0]).pos;
+        let Xsort = (x.senseinfo || x.word_info.pos_info[0]).pos;
+        let Xtype = x.wordinfo ? x.wordinfo.word_type : x.word_info.pos_info[0].comm_pattern_info[0].sense_info.at(-1).type;
         let match = /\d$/.test(Xword);
         let num;
         if (match) {
@@ -96,6 +97,7 @@ let file_list = [];
         word[prefix].push({
             word: Xword,
             mean: [Xmean],
+            sort: Xsort,
             type: Xtype,
             prefix: prefix,
             suffix: suffix
@@ -109,6 +111,7 @@ let file_list = [];
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 word TEXT NOT NULL,
                 mean TEXT NOT NULL,
+                sort TEXT NOT NULL,
                 type TEXT NOT NULL,
                 prefix TEXT,
                 suffix TEXT
@@ -142,6 +145,7 @@ let file_list = [];
                 data: {
                     word: W.word,
                     mean: W.mean.length == 1 ? W.mean[0] : W.mean.map((s, i) => (i + 1) + '. ' + s).join('\n'),
+                    sort: W.sort || '없음',
                     type: W.type || '없음',
                     prefix: W.prefix,
                     suffix: W.suffix

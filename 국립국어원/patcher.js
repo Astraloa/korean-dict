@@ -7,7 +7,7 @@ let thread = 0;
 
 console.log('Found DB File | ' + dict_db);
 
-const db = new Database(dict_db);
+const db = new Database(__dirname + '/' + dict_db);
 const total = db.prepare('SELECT COUNT(*) AS total FROM dicts').get().total;
 const rows = db.prepare('SELECT id, mean FROM dicts').all();
 
@@ -21,7 +21,7 @@ const updateAll = db.transaction((rows) => {
     if(mean_arr.length > 1) {
         mean_arr = mean_arr.map(str => {
             let str2 = str.replace(/[^0-9.,!\sA-Za-z가-힣]/g, '');
-            if(!isNaN(Number(str2[0])) str2 = str2.split(' ').slice(1).join(' '));
+            if(!isNaN(Number(str2[0]))) str2 = str2.split(' ').slice(1).join(' ');
             return str2;
         });
         mean_arr = [...new Set(mean_arr)];

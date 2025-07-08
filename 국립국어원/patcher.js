@@ -19,7 +19,7 @@ const updateAll = db.transaction((rows) => {
     let mean_arr = row.mean.split('\n');
     thread++;
     if(mean_arr.length > 1) {
-        mean_arr = mean_arr.map(str => str.replace(/[^0-9.,!\sA-Za-z가-힣]/g, ''));
+        mean_arr = mean_arr.map(str => str.replace(/[^0-9.,!\sA-Za-z가-힣]/g, '').split(' ').slice(1).join(' '));
         mean_arr = [...new Set(mean_arr)];
         let newMean = mean_arr.length > 2 ? mean_arr.map((x, int) => (int + 1) + '. ' + x).join('\n') : mean_arr[0];
         updateStmt.run(newMean, row.id);

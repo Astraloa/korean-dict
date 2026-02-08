@@ -1,4 +1,4 @@
-// refactored - v1.3
+// refactored - v1.4
 console.clear();
 
 console.log(`
@@ -14,225 +14,203 @@ console.log(`
                                                                       Y8b d88P 
                                                                        "Y88P"  `);
 console.log('\n  - by Astraloa  [Utils]\n');
+
 process.title = 'Astraloa util services #1';
 
 const Database = require('better-sqlite3');
 const fs = require('fs');
-const word = {};
 
-let thread = 0;
+const word = Object.create(null);
 let total = 0;
-let file_list = [];
+let thread = 0;
+let lastRender = 0;
 
 (async function () {
     await delay(1500);
     process.title = 'Dictionary [Utils]';
-    let folders = fs.readdirSync('./국립국어원').filter(path => !path.includes('.'));
+
+    const folders = fs.readdirSync('./국립국어원').filter(p => !p.includes('.'));
     console.log(`Found Folders: ${folders.length}\n`);
+
     await delay(1500);
-    folders.forEach(name => {
-        if (!name.endsWith('_json')) return;
+
+    const file_dirs = [];
+
+    for (const name of folders) {
+        if (!name.endsWith('_json')) continue;
+
         if (name.includes('근현대사전')) {
             console.log('[ ? ] 해당 서비스는 `근현대사전` 을 지원하지 않습니다.');
-            return;
-        } else if (name.includes('한국어기초사전')) {
-            console.log('[ ? ] 해당 서비스는 `한국어기초사전` 을 지원하지 않습니다.');
-        } else {
-            let dictionary = name.slice(0, -5);
-            console.log('[ ! ] 사전 발견 | ' + dictionary);
-            let files = fs.readdirSync(`./국립국어원/${dictionary}_json`)
-                .filter(x => x.endsWith('.json'))
-                .map(k => `./국립국어원/${dictionary}_json/${k}`);
-            file_list.push(files);
+            continue;
         }
-    });
-    if (file_list.length < 1) {
+        if (name.includes('한국어기초사전')) {
+            console.log('[ ? ] 해당 서비스는 `한국어기초사전` 을 지원하지 않습니다.');
+            continue;
+        }
+
+        const dictionary = name.slice(0, -5);
+        console.log('[ ! ] 사전 발견 | ' + dictionary);
+
+        const files = fs.readdirSync(`./국립국어원/${dictionary}_json`)
+            .filter(f => f.endsWith('.json'))
+            .map(f => `./국립국어원/${dictionary}_json/${f}`);
+
+        file_dirs.push(...files);
+    }
+
+    if (file_dirs.length === 0) {
         console.log('[ # ] 발견된 사전이 없어 서비스가 종료됩니다..');
         process.exit(0);
     }
-    await delay(1500);
-    let file_count = 0;
-    file_list.forEach(arr => file_count += arr.length);
-    console.log('\n[ ! ] 사전 데이터 파일: ' + file_count + '개');
-    let file_dirs = [];
-    file_list.forEach(arr => {
-        file_dirs = file_dirs.concat(arr);
-    });
-    let datas = [];
-    file_dirs.forEach(path => {
-        let X = JSON.parse(fs.readFileSync(path)).channel.item;
-        datas = datas.concat(X);
-        total += X.length;
-    })
-    console.log('[ ! ] 사전 데이터 | ' + total + '개\n');
-    datas.forEach(x => {
-        let Xword = (x.wordinfo || x.word_info).word.replace(/[^가-힣ㄱ-ㅎ0-9]/g, '');
-        let Xmean = (x.senseinfo || x.word_info.pos_info[0].comm_pattern_info[0].sense_info.at(-1)).definition;
-        let Xsort = (x.senseinfo || x.word_info.pos_info[0]).pos;
-        let Xtype = x.wordinfo ? x.wordinfo.word_type : x.word_info.pos_info[0].comm_pattern_info[0].sense_info.at(-1).type;
-        let match = /\d$/.test(Xword);
-        let num;
-        if (match) {
-            num = Xword.match(/\d+$/)[0];
-        }
-        let prefix = Xword.slice(0, 1);
-        let Index = -1;
-        if (!word[prefix]) word[prefix] = [];
-        if (1 < Number(num) && num) {
-            Index = word[prefix].findIndex(V => Xword.startsWith(V.word));
-            if (Index == -1) return;
-            if (word[prefix][Index].mean.findIndex(mean => mean == Xmean) != -1) return;
-            word[prefix][Index].mean.push(Xmean);
-            return;
-        } else if (1 == Number(num)) {
-            Xword = Xword.replace(num, '');
-        }
-        Index = word[prefix].findIndex(V => V.word == Xword);
-        if (Index != -1) {
-            if (word[prefix][Index].mean.includes(Xmean)) return;
-            word[prefix][Index].mean.push(Xmean);
-            return;
-        }
-        let suffix = Xword.slice(-1);
-        word[prefix].push({
-            word: Xword,
-            mean: [Xmean],
-            sort: Xsort,
-            type: Xtype,
-            prefix: prefix,
-            suffix: suffix
-        });
-    });
-    const db_path = `./국립국어원/dicts_${Date.now()}.db`;
-    fs.writeFileSync(db_path, '');
-    const db = new Database(db_path);
-    db.exec(`
-            CREATE TABLE IF NOT EXISTS dicts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                word TEXT NOT NULL,
-                mean TEXT NOT NULL,
-                sort TEXT NOT NULL,
-                type TEXT NOT NULL,
-                prefix TEXT,
-                suffix TEXT
-            );
-        `);
-    db.exec(`
-            CREATE TABLE IF NOT EXISTS info (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                build_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                data TEXT NOT NULL,
-                creator TEXT NOT NULL
-            );
-        `);
-    console.log(`DB 구축 완료!\n\n`);
-    let keys = Object.keys(word)
-        .sort((a, b) => a.localeCompare(b))
-        .map(prefix => {
-            word[prefix] = mergeSort(word[prefix]);
-            return prefix
-        });
-    console.log(`데이터 정렬 완료!\n\n`);
-    let startTime = Date.now();
-    keys.forEach(prefix => {
-        word[prefix].forEach(W => {
-            thread++;
-            write(`assets | ${thread.toLocaleString()}/${total.toLocaleString()}\r`);
-            process.title = `[${Math.floor(thread / total * 10000) / 100}%] assets loading..`;
-            input({
-                db: db,
-                table: 'dicts',
-                data: {
-                    word: W.word,
-                    mean: W.mean.length == 1 ? W.mean[0] : W.mean.map((s, i) => (i + 1) + '. ' + s).join('\n'),
-                    sort: W.sort || '없음',
-                    type: W.type || '없음',
-                    prefix: W.prefix,
-                    suffix: W.suffix
-                }
-            });
-        })
-    });
-    write(`assets loaded!${'\u200b'.repeat(35)}`);
-    input({
-        db: db,
-        table: 'info',
-        data: {
-            build_time: (new Date()).toLocaleString(),
-            data: total,
-            creator: 'Astraloa'
-        }
-    });
-    console.log('\n\n사전이 완성되었습니다!\n소요 시간|' + formatDuration(startTime));
-    process.exit(1);
-})();
 
-function input({ db, table, data }) {
-    if (!['dicts', 'info'].includes(table)) {
-        throw new Error(`Invalid table name: ${table}`);
+    console.log('\n[ ! ] 사전 데이터 파일: ' + file_dirs.length + '개');
+
+    for (const path of file_dirs) {
+        const items = JSON.parse(fs.readFileSync(path)).channel.item;
+        total += items.length;
+
+        for (const x of items) {
+            let Xword = (x.wordinfo || x.word_info).word.replace(/[^가-힣ㄱ-ㅎ0-9]/g, '');
+            const Xmean = (x.senseinfo || x.word_info.pos_info[0].comm_pattern_info[0].sense_info.at(-1)).definition;
+            const Xsort = (x.senseinfo || x.word_info.pos_info[0]).pos;
+            const Xtype = x.wordinfo
+                ? x.wordinfo.word_type
+                : x.word_info.pos_info[0].comm_pattern_info[0].sense_info.at(-1).type;
+
+            let num = null;
+            if (/\d$/.test(Xword)) num = Xword.match(/\d+$/)[0];
+
+            const prefix = Xword.slice(0, 1);
+            if (!word[prefix]) word[prefix] = new Map();
+            const map = word[prefix];
+
+            if (num && Number(num) > 1) {
+                for (const v of map.values()) {
+                    if (Xword.startsWith(v.word)) {
+                        if (!v.mean.includes(Xmean)) v.mean.push(Xmean);
+                        break;
+                    }
+                }
+                continue;
+            }
+
+            if (num && Number(num) === 1) {
+                Xword = Xword.replace(num, '');
+            }
+
+            if (map.has(Xword)) {
+                const obj = map.get(Xword);
+                if (!obj.mean.includes(Xmean)) obj.mean.push(Xmean);
+                continue;
+            }
+
+            map.set(Xword, {
+                word: Xword,
+                mean: [Xmean],
+                sort: Xsort,
+                type: Xtype,
+                prefix,
+                suffix: Xword.slice(-1)
+            });
+        }
     }
 
-    const keys = Object.keys(data);
-    const values = Object.values(data);
+    console.log('[ ! ] 사전 데이터 | ' + total + '개\n');
 
-    const placeholders = keys.map(() => '?').join(', ');
-    const sql = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`;
+    const db_path = `./국립국어원/dicts_${Date.now()}.db`;
+    fs.writeFileSync(db_path, '');
 
-    const stmt = db.prepare(sql);
-    const info = stmt.run(...values);
+    const db = new Database(db_path);
+    db.pragma('journal_mode = WAL');
+    db.pragma('synchronous = NORMAL');
 
-    return info.lastInsertRowid;
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS dicts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            word TEXT NOT NULL,
+            mean TEXT NOT NULL,
+            sort TEXT NOT NULL,
+            type TEXT NOT NULL,
+            prefix TEXT,
+            suffix TEXT
+        );
+        CREATE TABLE IF NOT EXISTS info (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            build_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            data TEXT NOT NULL,
+            creator TEXT NOT NULL
+        );
+    `);
+
+    console.log('DB 구축 완료!\n');
+
+    const insertDict = db.prepare(`
+        INSERT INTO dicts (word, mean, sort, type, prefix, suffix)
+        VALUES (@word, @mean, @sort, @type, @prefix, @suffix)
+    `);
+
+    const insertMany = db.transaction(rows => {
+        for (const row of rows) insertDict.run(row);
+    });
+
+    const rows = [];
+    const keys = Object.keys(word).sort((a, b) => a.localeCompare(b));
+    const startTime = Date.now();
+
+    for (const prefix of keys) {
+        const arr = Array.from(word[prefix].values());
+        arr.sort((a, b) => a.word.localeCompare(b.word));
+
+        for (const W of arr) {
+            thread++;
+            renderProgress(thread, total);
+
+            rows.push({
+                word: W.word,
+                mean: W.mean.length === 1
+                    ? W.mean[0]
+                    : W.mean.map((s, i) => `${i + 1}. ${s}`).join('\n'),
+                sort: W.sort || '없음',
+                type: W.type || '없음',
+                prefix: W.prefix,
+                suffix: W.suffix
+            });
+        }
+    }
+
+    insertMany(rows);
+
+    db.prepare(`
+        INSERT INTO info (build_time, data, creator)
+        VALUES (?, ?, ?)
+    `).run(new Date().toLocaleString(), total, 'Astraloa');
+
+    process.stdout.write(`assets loaded! ${thread.toLocaleString()}/${total.toLocaleString()}\n`);
+    console.log(`\n사전이 완성되었습니다!\n소요 시간 | ${formatDuration(startTime)}`);
+    process.exit(0);
+})();
+
+function renderProgress(current, total) {
+    const now = Date.now();
+    if (now - lastRender < 200) return;
+    lastRender = now;
+
+    const percent = Math.floor(current / total * 10000) / 100;
+    process.stdout.write(
+        `assets | ${current.toLocaleString()}/${total.toLocaleString()} (${percent}%)\r`
+    );
+    process.title = `[${percent}%] assets loading..`;
 }
 
 function formatDuration(past) {
     const diff = Date.now() - past;
-    
     const ms = diff % 1000;
-    const totalSeconds = Math.floor(diff / 1000);
-    const seconds = totalSeconds % 60;
-    const totalMinutes = Math.floor(totalSeconds / 60);
-    const minutes = totalMinutes % 60;
-    const totalHours = Math.floor(totalMinutes / 60);
-    const hours = totalHours % 24;
-
-    return `${hours}시간 ${minutes}분 ${seconds}초 ${ms}ms`;
+    const s = Math.floor(diff / 1000) % 60;
+    const m = Math.floor(diff / 60000) % 60;
+    const h = Math.floor(diff / 3600000);
+    return `${h}시간 ${m}분 ${s}초 ${ms}ms`;
 }
 
-function write(text) {
-    process.stdout.write(String(text));
-}
-
-function mergeSort(arr) {
-    if (arr.length <= 1) {
-        return arr;
-    }
-    const mid = Math.floor(arr.length / 2);
-    const left = arr.slice(0, mid);
-    const right = arr.slice(mid);
-
-    return merge(mergeSort(left), mergeSort(right));
-}
-
-function merge(left, right) {
-    let result = [];
-    let leftIndex = 0;
-    let rightIndex = 0;
-
-    while (leftIndex < left.length && rightIndex < right.length) {
-        if (left[leftIndex] < right[rightIndex]) {
-            result.push(left[leftIndex]);
-            leftIndex++;
-        } else {
-            result.push(right[rightIndex]);
-            rightIndex++;
-        }
-    }
-
-    return result.concat(left.slice(leftIndex)).concat(right.slice(rightIndex));
-}
-
-async function delay(ms) {
-    return await new Promise(resolve => {
-        setTimeout(() => resolve(true), ms);
-    });
+function delay(ms) {
+    return new Promise(r => setTimeout(r, ms));
 }
